@@ -57,15 +57,39 @@ class Account(Oanda):
         return r
 
 
+class Instrument(Oanda):
+
+    def __init__(self, auth, name, granularity):
+        super().__init__(auth)
+        self.name = name
+        self.granularity = granularity
+        self.cache = {}
+
+    def get_last_candles_by_count(self, count):
+        if count > 5000:
+            count = 5000
+        r = self.rest_get(f"instruments/{self.name}/candles?count={count}&price=M&granularity={self.granularity}")['candles']
+        self.cache = r
+        print(r)
+        print(len(r))
+        return r
+
+    def get_last_candles_by_time(self, granularity):
+        pass
 
 
 acc = Account(security.auth_key, security.account1_id)
 
-acc.get_details()
+# acc.get_details()
 acc.get_summary()
-acc.get_instruments()
+# acc.get_instruments()
 # acc.get_instruments('EUR_USD')
 print(acc.instruments)
 print(len(acc.instruments))
+
+instr = Instrument(security.auth_key, 'EUR_USD', 'S5')
+instr.get_last_candles_by_count(5001)
+
+
 #oanda.get_accounts()
 # print(oanda.accounts)
