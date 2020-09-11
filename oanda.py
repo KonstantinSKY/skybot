@@ -1,7 +1,9 @@
 import requests
 import json
 import security
-from datetime import datetime
+from datetime import datetime, timedelta
+from time import sleep
+from sys import getsizeof
 
 
 class Oanda:
@@ -84,6 +86,7 @@ class Instrument(Oanda):
         self.granularity = granularity
         self.price = f'price=M&granularity={self.granularity}'
         self.cache = {}
+        self.candles = {}
 
     def get_last_candles_by_count(self, count):
         if count > 5000:
@@ -97,8 +100,43 @@ class Instrument(Oanda):
             r = self.rest_get(f"instruments/{self.name}/candles?count=5000&from={from_time}&{self.price}")['candles']
         else:
             r = self.rest_get(f"instruments/{self.name}/candles?from={from_time}&to={to_time}&{self.price}")['candles']
-        self.cache = r                                                                                                        
+        self.cache = r
         return r
+
+    def get_all_candles(self):
+        start_time = '1990-09-09T0:20:48.932952Z'
+        iter = 0
+        while True:
+            self.get_candles_by_time(start_time)
+            if not self.cache:
+                print('The END')
+                break
+            iter += 1
+            print(iter)
+            print(len(self.cache))
+            start_time = self.get_date_time(self.get_time_obj(self.cache[-1]['time']) + timedelta(seconds=5))
+            # start_time = self.cache[-1]['time']
+            print(start_time)
+            self.set_candles()
+            print("len", len(self.candles))
+            print("getsizeof", getsizeof(self.candles))
+            sleep(3)
+
+    def set_candles(self):
+        for candle in self.cache:
+            self.candles.update({datetime.timestamp(Oanda.get_time_obj(candle['time'])): {
+                'open': candle['mid']['o'],
+                'close': candle['mid']['c'],
+                'high': candle['mid']['h'],
+                'low': candle['mid']['l'],
+                'volume': candle['volume']
+                }
+            })
+            # print(self.candles)
+
+            # print(len(self.candles))
+            #sleep(1)
+
 
 acc = Account(security.auth_key, security.account1_id)
 # acc.get_details()
@@ -109,7 +147,7 @@ print(acc.instruments)
 print(len(acc.instruments))
 
 instr = Instrument(security.auth_key, 'EUR_USD', 'S5')
-#instr.get_last_candles_by_count(5001)
+# instr.get_last_candles_by_count(5001)
 time = datetime.now()
 
 # print(time)
@@ -121,10 +159,12 @@ time = datetime.now()
 # dt_obj1 = Oanda.get_time_obj('2020-09-09T22:00:48.932952Z')
 # print(datetime.timestamp(dt_obj1))
 # print(Oanda.get_date_time(dt_obj1))
-#candles = instr.get_candles_by_time('2020-09-09T20:20:48.932952Z', Oanda.get_date_time(datetime.now()))
+# candles = instr.get_candles_by_time('2020-09-09T20:20:48.932952Z', Oanda.get_date_time(datetime.now()))
 candles = instr.get_candles_by_time('2020-09-09T0:20:48.932952Z')
 print(candles)
 print(len(candles))
-
-#oanda.get_accounts()
+#instr.set_candles()
+instr.get_all_candles()
+print(getsizeof(instr.candles))
+# oanda.get_accounts()
 # print(oanda.accounts)
