@@ -4,7 +4,19 @@ import security
 from datetime import datetime, timedelta
 from time import sleep
 from sys import getsizeof
+import logging
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# create the logging file handler
+fh = logging.FileHandler("logs/main.log")
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+# add handler to logger object
+logger.addHandler(fh)
+logger.info('Start program')
+logger.error('check error')
 
 class Oanda:
     addr = "https://api-fxpractice.oanda.com/v3/"
@@ -18,8 +30,16 @@ class Oanda:
         print(self.accounts_ids)
 
     def rest_get(self, sub_str):
-        res = requests.get(f'{Oanda.addr}{sub_str}', headers=self.headers)
-        return json.loads(res.text)
+        # TODO try except
+        res = None
+        for _ in range(10):
+            res = requests.get(f'{Oanda.addr}{sub_str}', headers=self.headers)
+            if res.status_code == 200:  # print('Response OK!')
+                return json.loads(res.text)
+            else:
+                logger.error(f'Response ERROR - {res}')
+                sleep(4)
+        return None
 
     def get_accounts(self):
         return self.rest_get("accounts")
@@ -97,10 +117,13 @@ class Instrument(Oanda):
 
     def get_candles_by_time(self, from_time, to_time=None):
         if to_time is None:
-            r = self.rest_get(f"instruments/{self.name}/candles?count=5000&from={from_time}&{self.price}")['candles']
+            r = self.rest_get(f"instruments/{self.name}/candles?count=5000&from={from_time}&{self.price}")
         else:
-            r = self.rest_get(f"instruments/{self.name}/candles?from={from_time}&to={to_time}&{self.price}")['candles']
-        self.cache = r
+            r = self.rest_get(f"instruments/{self.name}/candles?from={from_time}&to={to_time}&{self.price}")
+        if 'candles' not in r:
+            logger.error('Error No candles \n', r)
+            return
+        self.cache = r['candles']
         return r
 
     def get_all_candles(self):
@@ -109,18 +132,20 @@ class Instrument(Oanda):
         while True:
             self.get_candles_by_time(start_time)
             if not self.cache:
-                print('The END')
+                print(f'The END. start time: {start_time}')
+                logger.info(f'The END. start time: {start_time}')
                 break
             iter += 1
             print(iter)
             print(len(self.cache))
-            start_time = self.get_date_time(self.get_time_obj(self.cache[-1]['time']) + timedelta(seconds=5))
-            # start_time = self.cache[-1]['time']
+            new_time = self.get_date_time(self.get_time_obj(self.cache[-1]['time']) + timedelta(seconds=5))
+            if new_time:
+                start_time = new_time
             print(start_time)
             self.set_candles()
             print("len", len(self.candles))
             print("getsizeof", getsizeof(self.candles))
-            sleep(3)
+            sleep(0.01)
 
     def set_candles(self):
         for candle in self.cache:
@@ -160,9 +185,10 @@ time = datetime.now()
 # print(datetime.timestamp(dt_obj1))
 # print(Oanda.get_date_time(dt_obj1))
 # candles = instr.get_candles_by_time('2020-09-09T20:20:48.932952Z', Oanda.get_date_time(datetime.now()))
-candles = instr.get_candles_by_time('2020-09-09T0:20:48.932952Z')
+candles = instr.get_candles_by_time(instr.get_date_time(datetime.now()))
 print(candles)
 print(len(candles))
+sleep(20)
 #instr.set_candles()
 instr.get_all_candles()
 print(getsizeof(instr.candles))
