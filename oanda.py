@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from time import sleep
 from sys import getsizeof
 import logging
+from databases import ConnectDB
 
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,10 @@ logger.error('check error')
 
 class Oanda:
     addr = "https://api-fxpractice.oanda.com/v3/"
+    db_path = "DB/oanda.sqlite"
 
     def __init__(self, auth):
+        self.conn = ConnectDB(Oanda.db_path)
         self.headers = {'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + auth}
         self.accounts = self.get_accounts()['accounts']
@@ -33,7 +36,7 @@ class Oanda:
         # TODO try except
         res = None
         for _ in range(10):
-            res = requests.get(f'{Oanda.addr}{sub_str}', headers=self.headers)
+            res = requests.get(f'{Oanda.addr}{sub_str}', headers=self.headers, timeout=10)
             if res.status_code == 200:  # print('Response OK!')
                 return json.loads(res.text)
             else:
@@ -94,7 +97,7 @@ class Account(Oanda):
             self.instruments = [instrument['name'] for instrument in r]
         else:
             r = self.rest_get(f"accounts/{self.acc_id}/instruments?instruments={name}")['instruments']
-        print(r)
+        # print(r)
         return r
 
 
@@ -130,6 +133,7 @@ class Instrument(Oanda):
         start_time = '1990-09-09T0:20:48.932952Z'
         iter = 0
         while True:
+            # Todo count Delay time
             self.get_candles_by_time(start_time)
             if not self.cache:
                 print(f'The END. start time: {start_time}')
@@ -143,54 +147,56 @@ class Instrument(Oanda):
                 start_time = new_time
             print(start_time)
             self.set_candles()
-            print("len", len(self.candles))
-            print("getsizeof", getsizeof(self.candles))
-            sleep(0.01)
+            sleep(0.01)        # Delay for API
 
     def set_candles(self):
+        r = None
+        candles = []
         for candle in self.cache:
-            self.candles.update({datetime.timestamp(Oanda.get_time_obj(candle['time'])): {
-                'open': candle['mid']['o'],
-                'close': candle['mid']['c'],
+            candles.append({
+                'timestamp': int(datetime.timestamp(Oanda.get_time_obj(candle['time']))),
                 'high': candle['mid']['h'],
                 'low': candle['mid']['l'],
+                'open': candle['mid']['o'],
+                'close': candle['mid']['c'],
                 'volume': candle['volume']
                 }
-            })
-            # print(self.candles)
-
-            # print(len(self.candles))
-            #sleep(1)
+            )
+        self.conn.insert_many(self.name, candles)
+        self.conn.commit()
 
 
-acc = Account(security.auth_key, security.account1_id)
-# acc.get_details()
-acc.get_summary()
-# acc.get_instruments()
-# acc.get_instruments('EUR_USD')
-print(acc.instruments)
-print(len(acc.instruments))
+if __name__ == "__main__":
 
-instr = Instrument(security.auth_key, 'EUR_USD', 'S5')
-# instr.get_last_candles_by_count(5001)
-time = datetime.now()
+    acc = Account(security.auth_key, security.account1_id)
+    # acc.get_details()
+    acc.get_summary()
+    # acc.get_instruments()
+    # acc.get_instruments('EUR_USD')
+    print(acc.instruments)
+    print(len(acc.instruments))
 
-# print(time)
-# print(time.date())
-# print(time.time())
-# print(f'{time.date()}T{time.time()}Z')
-# print(datetime.timestamp(time))
-# print(datetime.timestamp(time)+5)
-# dt_obj1 = Oanda.get_time_obj('2020-09-09T22:00:48.932952Z')
-# print(datetime.timestamp(dt_obj1))
-# print(Oanda.get_date_time(dt_obj1))
-# candles = instr.get_candles_by_time('2020-09-09T20:20:48.932952Z', Oanda.get_date_time(datetime.now()))
-candles = instr.get_candles_by_time(instr.get_date_time(datetime.now()))
-print(candles)
-print(len(candles))
-sleep(20)
-#instr.set_candles()
-instr.get_all_candles()
-print(getsizeof(instr.candles))
-# oanda.get_accounts()
-# print(oanda.accounts)
+    instr = Instrument(security.auth_key, 'EUR_USD', 'S5')
+    # instr.get_last_candles_by_count(5001)
+    time = datetime.now()
+
+    # print(time)
+    # print(time.date())
+    # print(time.time())
+    # print(f'{time.date()}T{time.time()}Z')
+    # print(datetime.timestamp(time))
+    # print(datetime.timestamp(time)+5)
+    # dt_obj1 = Oanda.get_time_obj('2020-09-09T22:00:48.932952Z')
+    # print(datetime.timestamp(dt_obj1))
+    # print(Oanda.get_date_time(dt_obj1))
+    # candles = instr.get_candles_by_time('2020-09-09T20:20:48.932952Z', Oanda.get_date_time(datetime.now()))
+    # candles = instr.get_candles_by_time(instr.get_date_time(datetime.now()))
+    # candles = instr.get_candles_by_time("2009-10-06T14:12:45.000000Z")
+    # print(candles)
+    # print(len(candles))
+    sleep(10)
+    #instr.set_candles()
+    instr.get_all_candles()
+    print(getsizeof(instr.candles))
+    # oanda.get_accounts()
+    # print(oanda.accounts)

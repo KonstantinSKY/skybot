@@ -12,12 +12,3 @@ def try_decor(func):            # Decorator for handling exceptions
 
     return inner
 
-@to_json
-def get_data():
-    return {
-        'data': 42
-    }
-
-
-print(get_data())
-print(get_data.__name__)
