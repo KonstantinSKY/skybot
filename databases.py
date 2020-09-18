@@ -35,15 +35,30 @@ class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of w
         Say(f"Got records: {len(records)}").prn_ok()
         return records
 
+    @try_decor
+    def select_max(self, table, max_field):
+        self.cur.execute(f"SELECT MAX({max_field}) FROM {table}")
+        return self.cur.fetchall()[0][0]
+
+
+
     """Insert to table in Data base with try-exception
     EXAMPLE IN
         insert('table_name',
-           {
+           [{
             "login": "test_login",
             "password": "test_passwd",
             "id_service": 1,
             "id_person": None
-        }   
+            },
+            {
+            "login": "test_login",
+            "password": "test_passwd",
+            "id_service": 2,
+            "id_person": None
+            },
+            ...
+            ]
     """
 
     @try_decor

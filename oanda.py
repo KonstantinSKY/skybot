@@ -52,15 +52,16 @@ class Oanda:
         print(r)
 
     @classmethod
-    def get_time_obj(cls, date_time):
+    def get_timestamp(cls, date_time):
         date_time, microsec = date_time.rstrip('Z').split('.')
         date_time_obj = datetime.strptime(date_time, "%Y-%m-%dT%H:%M:%S")
         date_time_obj = date_time_obj.replace(microsecond=int(microsec))
         # print(date_time_obj)
-        return date_time_obj
+        return datetime.timestamp(date_time_obj)
 
     @classmethod
-    def get_date_time(cls, dt_obj):
+    def get_date_time(cls, timestamp):
+        dt_obj = datetime.fromtimestamp(timestamp)
         month = str(dt_obj.month).zfill(2)
         day = str(dt_obj.day).zfill(2)
         hour = str(dt_obj.hour).zfill(2)
@@ -129,8 +130,8 @@ class Instrument(Oanda):
         self.cache = r['candles']
         return r
 
-    def get_all_candles(self):
-        start_time = '1990-09-09T0:20:48.932952Z'
+    def get_all_candles(self, start_time='1990-09-09T0:20:48.932952Z'):
+
         iter = 0
         while True:
             # Todo count Delay time
@@ -142,19 +143,26 @@ class Instrument(Oanda):
             iter += 1
             print(iter)
             print(len(self.cache))
-            new_time = self.get_date_time(self.get_time_obj(self.cache[-1]['time']) + timedelta(seconds=5))
+            new_time = self.get_date_time(self.get_timestamp(self.cache[-1]['time']) + 5)
             if new_time:
                 start_time = new_time
             print(start_time)
             self.set_candles()
             sleep(0.01)        # Delay for API
 
+    def get_last_candles(self):
+        max_timestamp = self.conn.select_max(self.name, 'timestamp')
+        if max_timestamp:
+            self.get_all_candles(Oanda.get_date_time(max_timestamp))
+        else:
+            self.get_all_candles()
+
     def set_candles(self):
         r = None
         candles = []
         for candle in self.cache:
             candles.append({
-                'timestamp': int(datetime.timestamp(Oanda.get_time_obj(candle['time']))),
+                'timestamp': int(Oanda.get_timestamp(candle['time'])),
                 'high': candle['mid']['h'],
                 'low': candle['mid']['l'],
                 'open': candle['mid']['o'],
@@ -177,6 +185,7 @@ if __name__ == "__main__":
     print(len(acc.instruments))
 
     instr = Instrument(security.auth_key, 'EUR_USD', 'S5')
+
     # instr.get_last_candles_by_count(5001)
     time = datetime.now()
 
@@ -196,7 +205,8 @@ if __name__ == "__main__":
     # print(len(candles))
     sleep(10)
     #instr.set_candles()
-    instr.get_all_candles()
+    #instr.get_all_candles()
+    instr.get_last_candles()
     print(getsizeof(instr.candles))
     # oanda.get_accounts()
     # print(oanda.accounts)
