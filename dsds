@@ -1,0 +1,1 @@
+curl "https://stream-fxtrade.oanda.com/v1/prices?accountId=12345&instruments=AUD_CAD%2CAUD_CHF"

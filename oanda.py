@@ -6,18 +6,25 @@ from time import sleep
 from sys import getsizeof
 import logging
 from databases import ConnectDB
+import pytz
 
+EDT = pytz.timezone('America/New_York')
+ALA = pytz.timezone('America/Los_Angeles')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # create the logging file handler
+
 fh = logging.FileHandler("logs/main.log")
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(formatter)
+
 # add handler to logger object
+
 logger.addHandler(fh)
 logger.info('Start program')
 logger.error('check error')
+
 
 class Oanda:
     addr = "https://api-fxpractice.oanda.com/v3/"
@@ -26,22 +33,32 @@ class Oanda:
     def __init__(self, auth):
         self.conn = ConnectDB(Oanda.db_path)
         self.headers = {'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + auth}
+                        'Authorization': 'Bearer ' + auth,
+                        # 'Accept-Datetime-Format': 'UNIX',
+                        'Accept-Datetime-Format': 'RFC3339'
+                        }
         self.accounts = self.get_accounts()['accounts']
         self.accounts_ids = [account['id'] for account in self.accounts]
         print(self.accounts)
         print(self.accounts_ids)
 
     def rest_get(self, sub_str):
-        # TODO try except
         res = None
         for _ in range(10):
-            res = requests.get(f'{Oanda.addr}{sub_str}', headers=self.headers, timeout=10)
-            if res.status_code == 200:  # print('Response OK!')
-                return json.loads(res.text)
-            else:
+            try:
+                res = requests.get(f'{Oanda.addr}{sub_str}', headers=self.headers, timeout=20)
+                if res.status_code == 200:  # print('Response OK!')
+                    return json.loads(res.text)
+                else:
+                    logger.error(f'Response ERROR - {res}')
+                    sleep(4)
+            except requests.exceptions.Timeout:
+                logger.error(f'Response TIME OUT ERROR - {res}')
+                sleep(4)
+            except:
                 logger.error(f'Response ERROR - {res}')
                 sleep(4)
+
         return None
 
     def get_accounts(self):
@@ -101,7 +118,7 @@ class Account(Oanda):
         # print(r)
         return r
 
-
+ 
 class Instrument(Oanda):
 
     def __init__(self, auth, name, granularity):
@@ -131,7 +148,7 @@ class Instrument(Oanda):
         return r
 
     def get_all_candles(self, start_time='1990-09-09T0:20:48.932952Z'):
-
+        print(start_time, 'start_time')
         iter = 0
         while True:
             # Todo count Delay time
@@ -139,7 +156,10 @@ class Instrument(Oanda):
             if not self.cache:
                 print(f'The END. start time: {start_time}')
                 logger.info(f'The END. start time: {start_time}')
-                break
+                last_timestamp = self.conn.select_max(self.name, 'timestamp')
+                # print('last_timestamp', last_timestamp)
+                return last_timestamp
+
             iter += 1
             print(iter)
             print(len(self.cache))
@@ -152,13 +172,16 @@ class Instrument(Oanda):
 
     def get_last_candles(self):
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
+        if max_timestamp is None:
+            max_timestamp = 0
+        print('max_timestamp in', max_timestamp, Oanda.get_date_time(max_timestamp))
         if max_timestamp:
-            self.get_all_candles(Oanda.get_date_time(max_timestamp))
+            return self.get_all_candles(Oanda.get_date_time(max_timestamp))
         else:
-            self.get_all_candles()
+            print('base is Empty')
+            return self.get_all_candles()
 
     def set_candles(self):
-        r = None
         candles = []
         for candle in self.cache:
             candles.append({
@@ -184,8 +207,8 @@ if __name__ == "__main__":
     print(acc.instruments)
     print(len(acc.instruments))
 
-    instr = Instrument(security.auth_key, 'EUR_USD', 'S5')
-
+    instr = Instrument(security.auth_key, 'AUD_SGD', 'S5')
+    print(security.auth_key)
     # instr.get_last_candles_by_count(5001)
     time = datetime.now()
 
@@ -203,10 +226,15 @@ if __name__ == "__main__":
     # candles = instr.get_candles_by_time("2009-10-06T14:12:45.000000Z")
     # print(candles)
     # print(len(candles))
-    sleep(10)
+    sleep(1)
     #instr.set_candles()
     #instr.get_all_candles()
     instr.get_last_candles()
     print(getsizeof(instr.candles))
+    print(datetime.now())
+    print(datetime.now(ALA))
+    print(datetime.now(pytz.utc))
+    print(datetime.now(EDT))
+    print(datetime.now(EDT).weekday())
     # oanda.get_accounts()
     # print(oanda.accounts)
