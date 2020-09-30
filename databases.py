@@ -40,6 +40,17 @@ class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of w
         self.cur.execute(f"SELECT MAX({max_field}) FROM {table}")
         return self.cur.fetchall()[0][0]
 
+    @try_decor
+    def select_from_to_max(self, table, field, from_value) -> list:
+        """
+        Select all field records from DB with from value of 'field' to max value
+        :param table: string: DB Table Name
+        :param field: string: Field for data select
+        :param from_value: int or float: Value of field for Select from which to
+        :return:  List of Tuples: DB Records
+        """
+        self.cur.execute(f"SELECT * FROM {table} WHERE {field} >= {from_value}")
+        return self.cur.fetchall()
 
 
     """Insert to table in Data base with try-exception
@@ -87,4 +98,14 @@ class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of w
         values = [tuple(item[field] for field in fields_list) for item in data_obj]
         query = f'INSERT OR IGNORE INTO {table} ({fields}) VALUES ({binds})'
         self.cur.executemany(query, values)
+
+help(ConnectDB )
+
+if __name__ == "__main__":
+    print("CHECK ZONE")
+    db_path = 'DB/oanda.sqlite'
+    conn = ConnectDB(db_path)
+    help(conn.select_from_to_max)
+    records = conn.select_from_to_max('EUR_USD', 'timestamp', 1601485325)
+    print(records)
 

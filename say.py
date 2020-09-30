@@ -44,3 +44,7 @@ class Say(str):             # Class Say extends the class str, adding the abilit
         self.default_color = Say.color["Red"]
         self.prn(**options)
 
+
+if __name__ == "__main__":
+    test_str = Say()
+    test_str.prn_ok('rerer')

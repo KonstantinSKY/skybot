@@ -1,11 +1,12 @@
-import json
 import requests
 from requests.exceptions import HTTPError
-import logger
-import security
+from logger import Logger
+import json
 from time import sleep, time
+import os
 
-log = logger.log(__name__)
+print(os.getcwd())
+log_rest = Logger(__name__)
 
 
 class RestAPI:
@@ -27,17 +28,29 @@ class RestAPI:
                 response = self.client.get(url, timeout=self.timeout)
                 self.duration = time() - start_time
                 response.raise_for_status()
+                # if
+                return json.loads(response.text)
+
+            except HTTPError as http_err:
+                log_rest.prn_log_err(f'HTTP error occurred: {http_err}, attempt:{attempt}, duration:{self.duration}')
+                sleep(self.attempt_delay)
+            except Exception as err:
+                log_rest.prn_log_err(f' Error occurred {err}, attempt:{attempt}')
+
+    def get_stream(self, url, timeout=30):
+        self.timeout = timeout
+
+        for attempt in range(1, self.attempts + 1):
+            try:
+                response = self.client.get(url, timeout=self.timeout)
+                response.raise_for_status()
                 return response
 
             except HTTPError as http_err:
-                log.error(f'HTTP error occurred: {http_err}, attempt:{attempt}, duration:{self.duration}')
-                print(f'HTTP error occurred: {http_err}')
-                if response.status_code < 500:
-                    return None
+                log_rest.prn_log_err(f'HTTP error occurred: {http_err}, attempt:{attempt}, duration:{self.duration}')
                 sleep(self.attempt_delay)
             except Exception as err:
-                log.error(f' Error occurred {err}, attempt:{attempt}')
-                return None
+                log_rest.prn_log_err(f' Error occurred {err}, attempt:{attempt}')
 
 
 if __name__ == "__main__":
@@ -57,7 +70,7 @@ if __name__ == "__main__":
     print('rest2.client.headers', rest2.client.headers)
 
     print(rest2.get(
-        "https://api-fxpractice.oanda.com/v37/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
+        "https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
 
     print('rest_time2', rest2.duration)
     h = {'Content-Type': 'application/json',
