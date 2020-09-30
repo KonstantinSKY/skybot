@@ -53,27 +53,31 @@ class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of w
         return self.cur.fetchall()
 
 
-    """Insert to table in Data base with try-exception
-    EXAMPLE IN
-        insert('table_name',
-           [{
-            "login": "test_login",
-            "password": "test_passwd",
-            "id_service": 1,
-            "id_person": None
-            },
-            {
-            "login": "test_login",
-            "password": "test_passwd",
-            "id_service": 2,
-            "id_person": None
-            },
-            ...
-            ]
-    """
-
     @try_decor
     def insert(self, table, data_obj):
+        """
+        Insert to table in Data Base from object to one record
+        :param table: string: DB Table Name
+        :param data_obj: obj: Data for insertField for data select
+        :param from_value: int or float: Value of field for Select from which to
+        :return int: last id of new DB record
+        :example
+            insert('table_name',
+               [{
+                "login": "test_login",
+                "password": "test_passwd",
+                "id_service": 1,
+                "id_person": None
+                },
+                {
+                "login": "test_login",
+                "password": "test_passwd",
+                "id_service": 2,
+                "id_person": None
+                },
+                ...
+                ]
+        """
         fields = ''
         values = []
         binds = '?, ' * (len(data_obj[0]) - 1) + '?'
