@@ -103,7 +103,6 @@ class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of w
         query = f'INSERT OR IGNORE INTO {table} ({fields}) VALUES ({binds})'
         self.cur.executemany(query, values)
 
-help(ConnectDB )
 
 if __name__ == "__main__":
     print("CHECK ZONE")
@@ -112,4 +111,5 @@ if __name__ == "__main__":
     help(conn.select_from_to_max)
     records = conn.select_from_to_max('EUR_USD', 'timestamp', 1601485325)
     print(records)
+
 

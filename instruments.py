@@ -122,6 +122,7 @@ class Instrument(OandaAPI):
 
 
 if __name__ == "__main__":
+
     inst = Instrument(oanda_auth_keys[1], 'EUR_USD', 'S5')
     print(inst.get_last_candles_by_count(2))
     # print(inst.get_candles_by_time(1))
@@ -133,13 +134,13 @@ if __name__ == "__main__":
     inst.get_last_candles()
     print(inst.conn.select_max(inst.name, 'timestamp'), datetime.now().timestamp(), 'delta', datetime.now().timestamp()-inst.conn.select_max(inst.name, 'timestamp'))
     while True:
+
         last_time = datetime.now().timestamp() // 5 * 5
         print('last_time', last_time)
         next_time = last_time + 5
         print('next_time', next_time)
         sleep_time = next_time - datetime.now().timestamp()
         print('sleep_time', sleep_time)
-
         sleep(sleep_time)
         print('check_time', datetime.now().timestamp())
         if datetime.now().timestamp() < next_time:
