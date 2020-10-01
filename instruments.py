@@ -8,37 +8,48 @@ log = Logger(__name__)
 
 
 class Instrument(OandaAPI):
-
+    """
+    Instrument candle class, inherits from class Oanda_api
+    Works with Oanda API
+    """
     def __init__(self, auth, name, granularity):
+        """
+        Oanda instrument object constructor
+        :param auth: str -> Security
+        :param name: str -> Instrument name, for example "EUR_USD"
+        :param granularity: str ->   Instrument granularity or candle timeframe
+        :var self.url_candles: str -> Main URL, self.url_api inherits from Oanda_API
+        :var self.sub_url: srt -> Sub url string with price Type (BA) and timeframe
+        :var self.candle_caсhe: dict -> Temporary storage for received candles
+        """
         super().__init__(auth)
         self.name = name
         self.granularity = granularity
         self.url_candles = f'{self.url_api}/instruments/{name}/candles'
         self.sub_url = f'&price=BA&granularity={self.granularity}'
-        self.cache = {}
-        self.candles = {}
+        self.candle_cache = {}
 
     def get_last_candles_by_count(self, count=5000):
         if count > 5000:
             count = 5000
-        self.cache = self.get(f"{self.url_candles}?count={count}{self.sub_url}")['candles']
-        return self.cache
+        self.candle_cache = self.get(f"{self.url_candles}?count={count}{self.sub_url}")['candles']
+        return self.candle_cache
 
     def get_candles_by_time(self, from_time, to_time=None):
         if to_time is None:
-            self.cache = self.get(f"{self.url_candles}?count=5000&from={from_time}{self.sub_url}")['candles']
+            self.candle_cache = self.get(f"{self.url_candles}?count=5000&from={from_time}{self.sub_url}")['candles']
         else:
-            self.cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}{self.sub_url}")['candles']
-        return self.cache
+            self.candle_cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}{self.sub_url}")['candles']
+        return self.candle_cache
 
     def __stop_iterations(self):
         log.prn_log_info(f'The Getting is stopped.')
-        log.prn_log_info(f'Added total candles: {len(self.cache)}')
+        log.prn_log_info(f'Added total candles: {len(self.candle_cache)}')
         log.prn_log_info(f'Request duration: {self.duration}')
         last_timestamp = self.conn.select_max(self.name, 'timestamp')
         log.prn_log_info(f'last_time in DB: {last_timestamp} {self.from_ts(last_timestamp)}')
-        if self.cache:
-            last_time = self.cache[-1]['time']
+        if self.candle_cache:
+            last_time = self.candle_cache[-1]['time']
             log.prn_log_info(f'Last candle time in cache: {last_time}, {self.from_ts(last_time)}')
 
     def get_all_candles(self, start_time=1):
@@ -49,23 +60,23 @@ class Instrument(OandaAPI):
 
             self.get_candles_by_time(start_time)
 
-            if self.cache:
-                print(self.cache[-1])
-            log.prn_log_info(f'Iteration # {i}, received candles: {len(self.cache)}. '
+            if self.candle_cache:
+                print(self.candle_cache[-1])
+            log.prn_log_info(f'Iteration # {i}, received candles: {len(self.candle_cache)}. '
                              f'Start_time:, {start_time}, {self.from_ts(start_time)}')
-            if not self.cache:
+            if not self.candle_cache:
                 log.prn_log_info(f'Candles list empty. start time: {start_time} {self.from_ts(start_time)}')
                 self.__stop_iterations()
                 return
 
-            if not self.cache[-1]['complete']:
-                log.prn_log_info(f'Not complete candle found. Deleting candle from cache {self.cache[-1]}')
+            if not self.candle_cache[-1]['complete']:
+                log.prn_log_info(f'Not complete candle found. Deleting candle from cache {self.candle_cache[-1]}')
                 print(datetime.now().timestamp())
-                print('LAST CANDLE NOT COMPLETE:', self.cache[-1]['complete'], self.from_ts(self.cache[-1]['time']))
+                print('LAST CANDLE NOT COMPLETE:', self.candle_cache[-1]['complete'], self.from_ts(self.candle_cache[-1]['time']))
 
-                del self.cache[-1]
+                del self.candle_cache[-1]
 
-                if self.cache:
+                if self.candle_cache:
                     self.set_candles()
 
                 self.__stop_iterations()
@@ -73,7 +84,7 @@ class Instrument(OandaAPI):
 
             self.set_candles()
 
-            start_time = int(float(self.cache[-1]['time'])) + 5
+            start_time = int(float(self.candle_cache[-1]['time'])) + 5
 
             if start_time > datetime.now().timestamp():
                 log.prn_log_info('Next start time more them time NOW')
@@ -90,8 +101,8 @@ class Instrument(OandaAPI):
 
     def set_candles(self):
         candles = []
-        print('self.cache', self.cache)
-        for candle in self.cache:
+        print('self.cache', self.candle_cache)
+        for candle in self.candle_cache:
             candles.append({
                 'timestamp': int(float(candle['time'])),
                 'bid_high': candle['bid']['h'],
