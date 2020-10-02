@@ -3,6 +3,7 @@ from security import oanda_auth_keys
 from datetime import datetime
 from logger import Logger
 from time import sleep
+import asyncio
 
 log = Logger(__name__)
 
@@ -33,14 +34,17 @@ class Instrument(OandaAPI):
         if count > 5000:
             count = 5000
         self.candle_cache = self.get(f"{self.url_candles}?count={count}{self.sub_url}")['candles']
+        print('ok')
         return self.candle_cache
 
-    def get_candles_by_time(self, from_time, to_time=None):
+    async def get_candles_by_time(self, from_time, to_time=None):
         if to_time is None:
             self.candle_cache = self.get(f"{self.url_candles}?count=5000&from={from_time}{self.sub_url}")['candles']
         else:
             self.candle_cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}{self.sub_url}")['candles']
-        return self.candle_cache
+        print(self.duration)
+        # await asyncio.sleep(0)
+        return
 
     def __stop_iterations(self):
         log.prn_log_info(f'The Getting is stopped.')
@@ -52,17 +56,18 @@ class Instrument(OandaAPI):
             last_time = self.candle_cache[-1]['time']
             log.prn_log_info(f'Last candle time in cache: {last_time}, {self.from_ts(last_time)}')
 
-    def get_all_candles(self, start_time=1):
-        log.prn_log_info(f'Start_time:, {start_time}, {self.from_ts(start_time)}')
+    async def get_all_candles(self, start_time=1):
+        log.prn_log_info(f'Start_time:, {start_time}, {self.name},  {self.from_ts(start_time)}')
         i = 0
+
         while True:
             i += 1
 
-            self.get_candles_by_time(start_time)
+            await self.get_candles_by_time(start_time)
 
             if self.candle_cache:
                 print(self.candle_cache[-1])
-            log.prn_log_info(f'Iteration # {i}, received candles: {len(self.candle_cache)}. '
+            log.prn_log_info(f'Iteration # {i}, {self.name}, received candles: {len(self.candle_cache)}. '
                              f'Start_time:, {start_time}, {self.from_ts(start_time)}')
             if not self.candle_cache:
                 log.prn_log_info(f'Candles list empty. start time: {start_time} {self.from_ts(start_time)}')
@@ -83,7 +88,7 @@ class Instrument(OandaAPI):
                 return
 
             self.set_candles()
-
+            await asyncio.sleep(0)
             start_time = int(float(self.candle_cache[-1]['time'])) + 5
 
             if start_time > datetime.now().timestamp():
@@ -91,17 +96,17 @@ class Instrument(OandaAPI):
                 self.__stop_iterations()
                 return
 
-    def get_last_candles(self):
+    async def get_last_candles(self):
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
         max_timestamp = max_timestamp if max_timestamp is not None else 1
 
         print('max_timestamp in', max_timestamp, datetime.fromtimestamp(max_timestamp))
         max_timestamp = max_timestamp if max_timestamp else 1
-        return self.get_all_candles(max_timestamp + 5)
+        return await self.get_all_candles(max_timestamp + 5)
 
     def set_candles(self):
         candles = []
-        print('self.cache', self.candle_cache)
+       # print('self.cache', self.candle_cache)
         for candle in self.candle_cache:
             candles.append({
                 'timestamp': int(float(candle['time'])),
@@ -116,9 +121,9 @@ class Instrument(OandaAPI):
                 'volume': candle['volume']
                 }
             )
-        print('candles record ', candles)
         self.conn.insert_many(self.name, candles)
         self.conn.commit()
+        print('recorded ', self.name)
 
 
 if __name__ == "__main__":

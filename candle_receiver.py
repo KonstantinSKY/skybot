@@ -1,6 +1,8 @@
 from account import Account
 from instruments import Instrument
 from security import oanda_auth_keys
+import asyncio
+from time import sleep
 
 
 class CandleReceiver:
@@ -22,8 +24,25 @@ class CandleReceiver:
         for instrument in self.instruments:
             self.instr_objects.append(Instrument(oanda_auth_keys[1], instrument, 'S5'))
 
+        self.loop = asyncio.get_event_loop()
+
+
+# async def get_last(obj):
+#     print('object', obj)
+#     await obj.get_all_candles()
+#
+
+def main():
+    loop = asyncio.get_event_loop()
+    task_list = [loop.create_task(obj.get_last_candles()) for obj in cr.instr_objects]
+    print(task_list)
+    loop.run_until_complete(asyncio.wait(task_list))
+    pass
+
 
 if __name__ == "__main__":
     """for checking"""
     cr = CandleReceiver()
     print(cr.instruments)
+
+    main()
