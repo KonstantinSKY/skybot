@@ -38,12 +38,16 @@ class Instrument(OandaAPI):
         return self.candle_cache
 
     async def get_candles_by_time(self, from_time, to_time=None):
+        start_time = datetime.now().timestamp()
         if to_time is None:
             self.candle_cache = self.get(f"{self.url_candles}?count=5000&from={from_time}{self.sub_url}")['candles']
         else:
             self.candle_cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}{self.sub_url}")['candles']
-        print(self.duration)
-        # await asyncio.sleep(0)
+        print('time for response', datetime.now().timestamp()-start_time)
+        print(f"1.time for:{self.name}:{self.duration}")
+        await asyncio.sleep(0)
+        print(f"2.time for:{self.name}:{self.duration}")
+
         return
 
     def __stop_iterations(self):
@@ -62,13 +66,13 @@ class Instrument(OandaAPI):
 
         while True:
             i += 1
-
+            log.prn_log_info(f'Iteration # {i}, {self.name},Start_time:, {start_time}, {self.from_ts(start_time)}')
             await self.get_candles_by_time(start_time)
 
             if self.candle_cache:
                 print(self.candle_cache[-1])
-            log.prn_log_info(f'Iteration # {i}, {self.name}, received candles: {len(self.candle_cache)}. '
-                             f'Start_time:, {start_time}, {self.from_ts(start_time)}')
+            log.prn_log_info(f'Iteration # {i}, {self.name}, received candles: {len(self.candle_cache)}. ')
+
             if not self.candle_cache:
                 log.prn_log_info(f'Candles list empty. start time: {start_time} {self.from_ts(start_time)}')
                 self.__stop_iterations()
@@ -88,7 +92,6 @@ class Instrument(OandaAPI):
                 return
 
             self.set_candles()
-            await asyncio.sleep(0)
             start_time = int(float(self.candle_cache[-1]['time'])) + 5
 
             if start_time > datetime.now().timestamp():
@@ -99,10 +102,12 @@ class Instrument(OandaAPI):
     async def get_last_candles(self):
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
         max_timestamp = max_timestamp if max_timestamp is not None else 1
-
+        print('Start last candles: ', self.name)
         print('max_timestamp in', max_timestamp, datetime.fromtimestamp(max_timestamp))
         max_timestamp = max_timestamp if max_timestamp else 1
-        return await self.get_all_candles(max_timestamp + 5)
+        await asyncio.sleep(0)
+        res = await self.get_all_candles(max_timestamp + 5)
+        return res
 
     def set_candles(self):
         candles = []
