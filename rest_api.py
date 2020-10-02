@@ -1,4 +1,6 @@
 import requests
+import aiohttp
+import asyncio
 from requests.exceptions import HTTPError
 from logger import Logger
 import json
@@ -17,6 +19,7 @@ class RestAPI:
         :param headers: dict object -> request headers parameters
         :var self.session: object -> session for non async connection
         :var self.headers: -> request headers parameters
+        :var self.params: dict object -> parameters of request
         :var self.timeout: -> request timeout in sec
         :var self.attempts: -> connection attempts count, in connection error case
         :var self.attempts_delay: -> delay between connection attempts
@@ -24,6 +27,7 @@ class RestAPI:
         """
         self.session = requests.Session()
         self.headers = headers if headers else {}
+        self.params = {}
         self.timeout = 0
         self.attempts = 10
         self.attempt_delay = 5
@@ -65,6 +69,18 @@ class RestAPI:
             except Exception as err:
                 log_rest.prn_log_err(f' Error occurred {err}, attempt:{attempt}')
 
+    async def get_async(self, url, timeout=30):
+        print(f'request {url} Start')
+        session = aiohttp.ClientSession()
+
+        async with session.get(url, headers=self.headers, params=self.params) as resp:
+            print(f'request {url} midle')
+            print(resp.status)
+            print(await resp.text())
+            print(f'request {url} finished')
+
+        await session.close()
+
 
 if __name__ == "__main__":
     rest = RestAPI()
@@ -99,3 +115,13 @@ if __name__ == "__main__":
     print(rest3.get(
         "https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
     print('rest_time', rest3.duration)
+
+    print('get async')
+    rest4 = RestAPI(h)
+    loop = asyncio.get_event_loop()
+
+    url = 'https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5'
+    url2 = 'https://api-fxpractice.oanda.com/v3/instruments/GBP_USD/candles?count=6&price=M&granularity=S5'
+
+    loop.run_until_complete(asyncio.gather(rest4.get_async(url), rest4.get_async(url2)))
+
