@@ -4,6 +4,7 @@ from logger import Logger
 import json
 from time import sleep, time
 import os
+from security import auth_key
 
 print(os.getcwd())
 log_rest = Logger(__name__)
@@ -59,8 +60,9 @@ if __name__ == "__main__":
     print('rest.client.headers', rest.client.headers)
     print(time())
     print('rest_time', rest.duration)
+    auth = f'Bearer {auth_key}'
     h = {'Content-Type': 'application/json',
-         'Authorization': 'Bearer c86eb218936e2b01ec5a52a729e17cae-963352d561978c294ce4b680e3335a03',
+         'Authorization': auth,
          }
 
     print('rest_time', rest.duration)
@@ -74,7 +76,7 @@ if __name__ == "__main__":
 
     print('rest_time2', rest2.duration)
     h = {'Content-Type': 'application/json',
-         'Authorization': 'Bearer c86eb218936e2b01ec5a52a729e17cae-963352d561978c294ce4b680e3335a03',
+         'Authorization': auth,
          'Accept-Datetime-Format': 'UNIX'
          # 'Accept-Datetime-Format': 'RFC3339'
          }
