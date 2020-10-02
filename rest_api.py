@@ -20,6 +20,9 @@ class RestAPI:
         self.attempt_delay = 5
         self.duration = 0
 
+    def __del__(self):
+        self.client.close()
+
     def get(self, url, timeout=30):
         self.timeout = timeout
 
