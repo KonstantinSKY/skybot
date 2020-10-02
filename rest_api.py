@@ -6,6 +6,7 @@ from logger import Logger
 import json
 from time import sleep, time
 from security import auth_key
+from datetime import datetime
 
 log_rest = Logger(__name__)
 
@@ -119,9 +120,15 @@ if __name__ == "__main__":
     print('get async')
     rest4 = RestAPI(h)
     loop = asyncio.get_event_loop()
+    rest4.params = {'count': 6,
+                    'price': 'M',
+                    'granularity': 'S5'}
 
-    url = 'https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5'
-    url2 = 'https://api-fxpractice.oanda.com/v3/instruments/GBP_USD/candles?count=6&price=M&granularity=S5'
+    url = 'https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles'
+    url2 = 'https://api-fxpractice.oanda.com/v3/instruments/GBP_USD/candles'
 
+    task = [rest4.get_async(f'https://api-fxpractice.oanda.com/v3/instruments/{instr}/candles') for ]
+
+    start_time = datetime.now().timestamp()
     loop.run_until_complete(asyncio.gather(rest4.get_async(url), rest4.get_async(url2)))
-
+    print('Time:', datetime.now().timestamp() - start_time)
