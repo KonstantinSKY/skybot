@@ -28,7 +28,13 @@ class Instrument(OandaAPI):
         self.granularity = granularity
         self.url_candles = f'{self.url_api}/instruments/{name}/candles'
         self.sub_url = f'&price=BA&granularity={self.granularity}'
+        self.params = {'price': 'BA',
+                       'granularity': 'S5'}
         self.candle_cache = {}
+
+        max_timestamp = self.conn.select_max(self.name, 'timestamp')
+        self.start_time = max_timestamp + 5 if max_timestamp else 1
+        print('start time', self.start_time)
 
     def get_last_candles_by_count(self, count=5000):
         if count > 5000:
@@ -37,7 +43,7 @@ class Instrument(OandaAPI):
         print('ok')
         return self.candle_cache
 
-    async def get_candles_by_time(self, from_time, to_time=None):
+    def get_candles_by_time(self, from_time, to_time=None):
         start_time = datetime.now().timestamp()
         if to_time is None:
             self.candle_cache = self.get(f"{self.url_candles}?count=5000&from={from_time}{self.sub_url}")['candles']
@@ -45,7 +51,6 @@ class Instrument(OandaAPI):
             self.candle_cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}{self.sub_url}")['candles']
         print('time for response', datetime.now().timestamp()-start_time)
         print(f"1.time for:{self.name}:{self.duration}")
-        await asyncio.sleep(0)
         print(f"2.time for:{self.name}:{self.duration}")
 
         return
@@ -60,14 +65,14 @@ class Instrument(OandaAPI):
             last_time = self.candle_cache[-1]['time']
             log.prn_log_info(f'Last candle time in cache: {last_time}, {self.from_ts(last_time)}')
 
-    async def get_all_candles(self, start_time=1):
+    def get_all_candles(self, start_time=1):
         log.prn_log_info(f'Start_time:, {start_time}, {self.name},  {self.from_ts(start_time)}')
         i = 0
 
         while True:
             i += 1
             log.prn_log_info(f'Iteration # {i}, {self.name},Start_time:, {start_time}, {self.from_ts(start_time)}')
-            await self.get_candles_by_time(start_time)
+            self.get_candles_by_time(start_time)
 
             if self.candle_cache:
                 print(self.candle_cache[-1])
@@ -99,14 +104,36 @@ class Instrument(OandaAPI):
                 self.__stop_iterations()
                 return
 
-    async def get_last_candles(self):
+    def get_start_time(self):
+        if self.candle_cache:
+            self.start_time = int(float(self.candle_cache[-1]['time'])) + 5
+            return self.start_time
+
+
+
+    def get_last_candles(self):
+        """ Get all last candles"""
+        # get Next timestamp after last max candle in DB by timestamp
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
-        max_timestamp = max_timestamp if max_timestamp is not None else 1
+        # max_timestamp = max_timestamp if max_timestamp is not None else 1
+        # return max timestamp
+
         print('Start last candles: ', self.name)
         print('max_timestamp in', max_timestamp, datetime.fromtimestamp(max_timestamp))
         max_timestamp = max_timestamp if max_timestamp else 1
-        await asyncio.sleep(0)
-        res = await self.get_all_candles(max_timestamp + 5)
+        # return max timestamp
+
+        res = self.get_all_candles(max_timestamp + 5)
+        # get start time
+        #while True
+        # Prepare URL and param get...def set_url_param_by_time
+        #request clean JSON?
+        # after work
+            # verify get new timestamp
+            # save params and url
+            # get new timestamp
+            # save result to DB
+
         return res
 
     def set_candles(self):
