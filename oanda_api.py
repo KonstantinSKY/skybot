@@ -35,7 +35,7 @@ class OandaAPI(RestAPI):
         else:
             log_rest.log_err(f"Unknown trade environment: {auth['env']}")
 
-        self.client.headers = {'Accept - Encoding': 'gzip, deflate',
+        self.session.headers = {'Accept - Encoding': 'gzip, deflate',
                                'Content-Type': 'application/json',
                                'Authorization': 'Bearer ' + auth['key'],
                                'Accept-Datetime-Format': 'UNIX',
