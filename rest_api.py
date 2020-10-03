@@ -27,6 +27,7 @@ class RestAPI:
         :var self.duration: -> duration of last request in sec
         """
         self.session = requests.Session()
+        # self.aio_session = aiohttp.ClientSession()
         self.headers = headers if headers else {}
         self.params = {}
         self.timeout = 0
@@ -36,6 +37,7 @@ class RestAPI:
 
     def __del__(self):
         self.session.close()
+        # self.aio_session.close()
 
     def get(self, url, timeout=30):
         self.timeout = timeout
@@ -77,10 +79,12 @@ class RestAPI:
         async with session.get(url, headers=self.headers, params=self.params) as resp:
             print(f'request {url} midle')
             print(resp.status)
-            print(await resp.text())
+            res = await resp.text()
             print(f'request {url} finished')
 
         await session.close()
+        # await asyncio.sleep(0)
+        return res
 
 
 if __name__ == "__main__":
@@ -120,8 +124,8 @@ if __name__ == "__main__":
     print('get async')
     rest4 = RestAPI(h)
     loop = asyncio.get_event_loop()
-    rest4.params = {'count': 5000,
-                    'price': 'M',
+    rest4.params = {'count': 5,
+                    'price': 'B',
                     'granularity': 'S5'}
 
     instrument = ['CAD_SGD', 'GBP_NZD', 'ZAR_JPY', 'EUR_HUF', 'EUR_DKK', 'USD_MXN', 'GBP_USD', 'NZD_HKD', 'AUD_CHF', 'CAD_JPY', 'GBP_SGD', 'USD_SEK', 'AUD_HKD', 'AUD_NZD', 'AUD_JPY', 'EUR_ZAR', 'SGD_CHF', 'AUD_SGD', 'EUR_JPY', 'USD_CHF', 'USD_TRY', 'GBP_JPY', 'EUR_CZK', 'CHF_ZAR', 'EUR_TRY', 'USD_JPY', 'USD_NOK', 'TRY_JPY', 'USD_DKK', 'CHF_JPY', 'EUR_PLN', 'SGD_JPY', 'AUD_CAD', 'NZD_USD', 'EUR_CHF', 'NZD_SGD', 'USD_HKD', 'CHF_HKD', 'USD_CAD', 'USD_CNH', 'USD_CZK', 'GBP_ZAR', 'EUR_HKD', 'HKD_JPY', 'EUR_AUD', 'USD_SGD', 'EUR_SEK', 'GBP_HKD', 'EUR_NZD', 'EUR_CAD', 'USD_HUF', 'NZD_CAD', 'EUR_SGD', 'AUD_USD', 'EUR_USD', 'GBP_AUD', 'USD_PLN', 'SGD_HKD', 'CAD_HKD', 'GBP_CAD', 'USD_SAR', 'GBP_PLN', 'EUR_NOK', 'NZD_CHF', 'USD_ZAR', 'NZD_JPY', 'USD_THB', 'GBP_CHF', 'EUR_GBP', 'CAD_CHF']
@@ -130,8 +134,21 @@ if __name__ == "__main__":
     url2 = 'https://api-fxpractice.oanda.com/v3/instruments/GBP_USD/candles'
     url3 = 'https://api-fxpractice.oanda.com/v3/instruments/GBP_JPY/candles'
 
-    task = [loop.create_task(rest4.get_async(f'https://api-fxpractice.oanda.com/v3/instruments/{instr}/candles')) for instr in instrument]
-    print(task)
+    async def prnres(url):
+        rest5 = RestAPI(h)
+        rest5.params = {'count': 5,
+                        'price': 'B',
+                        'granularity': 'S5'}
+        res = await rest5.get_async(url)
+        res = json.loads(res)['candles']
+        print(res)
+        print(len(res))
+
+
+
+    # task = [loop.create_task(rest4.get_async(f'https://api-fxpractice.oanda.com/v3/instruments/{instr}/candles')) for instr in instrument]
+    # print(task)
+    task = [loop.create_task(prnres(f'https://api-fxpractice.oanda.com/v3/instruments/{instr}/candles')) for instr in instrument]
 
     start_time = datetime.now().timestamp()
     # loop.run_until_complete(asyncio.gather(rest4.get_async(url), rest4.get_async(url2), rest4.get_async(url3)))
