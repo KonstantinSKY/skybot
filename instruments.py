@@ -27,28 +27,31 @@ class Instrument(OandaAPI):
         self.name = name
         self.granularity = granularity
         self.url_candles = f'{self.url_api}/instruments/{name}/candles'
-        self.sub_url = f'&price=BA&granularity={self.granularity}'
-        self.params = {'price': 'BA',
-                       'granularity': 'S5'}
+        # self.sub_url = f'&price=BA&granularity={self.granularity}'
         self.candle_cache = {}
 
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
-        self.start_time = max_timestamp + 5 if max_timestamp else 1
-        print('start time', self.start_time)
+        max_timestamp = max_timestamp + 5 if max_timestamp else 1
+        self.params = {'price': 'BA',
+                       'granularity': 'S5',
+                       'from': max_timestamp}
+        self.iter = 0
+
+        print('self.params', self.params)
 
     def get_last_candles_by_count(self, count=5000):
         if count > 5000:
             count = 5000
-        self.candle_cache = self.get(f"{self.url_candles}?count={count}{self.sub_url}")['candles']
+        self.candle_cache = self.get(f"{self.url_candles}")['candles']
         print('ok')
         return self.candle_cache
 
     def get_candles_by_time(self, from_time, to_time=None):
         start_time = datetime.now().timestamp()
         if to_time is None:
-            self.candle_cache = self.get(f"{self.url_candles}?count=5000&from={from_time}{self.sub_url}")['candles']
+            self.candle_cache = self.get(f"{self.url_candles}?count=5000&from={from_time}")['candles']
         else:
-            self.candle_cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}{self.sub_url}")['candles']
+             self.candle_cache = self.get(f"{self.url_candles}?from={from_time}&to={to_time}")['candles']
         print('time for response', datetime.now().timestamp()-start_time)
         print(f"1.time for:{self.name}:{self.duration}")
         print(f"2.time for:{self.name}:{self.duration}")
@@ -104,26 +107,29 @@ class Instrument(OandaAPI):
                 self.__stop_iterations()
                 return
 
-    def get_start_time(self):
+    def set_start_time(self):
         if self.candle_cache:
             self.start_time = int(float(self.candle_cache[-1]['time'])) + 5
-            return self.start_time
-
-
+        else:
+            max_timestamp = self.conn.select_max(self.name, 'timestamp')
+            self.start_time = max_timestamp + 5 if max_timestamp else 1
 
     def get_last_candles(self):
         """ Get all last candles"""
-        # get Next timestamp after last max candle in DB by timestamp
-        max_timestamp = self.conn.select_max(self.name, 'timestamp')
-        # max_timestamp = max_timestamp if max_timestamp is not None else 1
-        # return max timestamp
+        # # get Next timestamp after last max candle in DB by timestamp
+        # max_timestamp = self.conn.select_max(self.name, 'timestamp')
+        # # max_timestamp = max_timestamp if max_timestamp is not None else 1
+        # # return max timestamp
+        #
+        # print('Start last candles: ', self.name)
+        # print('max_timestamp in', max_timestamp, datetime.fromtimestamp(max_timestamp))
+        # max_timestamp = max_timestamp if max_timestamp else 1
+        # # return max timestamp
+        while True:
+            self.candle_cache = self.get(f"{self.url_candles}")['candles']
+            print('self.candle_cache', self.candle_cache)
 
-        print('Start last candles: ', self.name)
-        print('max_timestamp in', max_timestamp, datetime.fromtimestamp(max_timestamp))
-        max_timestamp = max_timestamp if max_timestamp else 1
-        # return max timestamp
-
-        res = self.get_all_candles(max_timestamp + 5)
+        #res = self.get_all_candles(max_timestamp + 5)
         # get start time
         #while True
         # Prepare URL and param get...def set_url_param_by_time
@@ -134,7 +140,31 @@ class Instrument(OandaAPI):
             # get new timestamp
             # save result to DB
 
-        return res
+        # return res
+    def verify_candles(self):
+        self.iter += 1
+        log.prn_log_info(f'Iteration # {self.iter}, {self.name}, Start_time:, {self.params["from"]}, {self.from_ts(self.params["from"])}')
+
+        if not self.candle_cache:
+            log.prn_log_info(f'Candles list empty. start time: {self.params["from"]} {self.from_ts(start_time)}')
+            # self.__stop_iterations()
+            return
+
+        log.prn_log_info(f'Iteration # {self.iter}, {self.name}, received candles: {len(self.candle_cache)}. ')
+
+        if not self.candle_cache[-1]['complete']:
+            log.prn_log_info(f'Not complete candle found. Deleting candle from cache {self.candle_cache[-1]}')
+            print(datetime.now().timestamp())
+            print('LAST CANDLE NOT COMPLETE:', self.candle_cache[-1]['complete'],
+                  self.from_ts(self.candle_cache[-1]['time']))
+
+            del self.candle_cache[-1]
+
+            if self.candle_cache:
+                self.set_candles()
+
+            self.__stop_iterations()
+
 
     def set_candles(self):
         candles = []
@@ -161,28 +191,29 @@ class Instrument(OandaAPI):
 if __name__ == "__main__":
 
     inst = Instrument(oanda_auth_keys[1], 'EUR_USD', 'S5')
-    print(inst.get_last_candles_by_count(2))
-    # print(inst.get_candles_by_time(1))
-    print(datetime.fromtimestamp(1600759075))
-    print(datetime.fromtimestamp(1))
-    #print(datetime.fromtimestamp(1086037195))
-    #inst.get_all_candles()
-
+    # print(inst.get_last_candles_by_count(2))
+    # # print(inst.get_candles_by_time(1))
+    # print(datetime.fromtimestamp(1600759075))
+    # print(datetime.fromtimestamp(1))
+    # #print(datetime.fromtimestamp(1086037195))
+    # #inst.get_all_candles()
+    #
     inst.get_last_candles()
-    print(inst.conn.select_max(inst.name, 'timestamp'), datetime.now().timestamp(), 'delta', datetime.now().timestamp()-inst.conn.select_max(inst.name, 'timestamp'))
-    while True:
 
-        last_time = datetime.now().timestamp() // 5 * 5
-        print('last_time', last_time)
-        next_time = last_time + 5
-        print('next_time', next_time)
-        sleep_time = next_time - datetime.now().timestamp()
-        print('sleep_time', sleep_time)
-        sleep(sleep_time)
-        print('check_time', datetime.now().timestamp())
-        if datetime.now().timestamp() < next_time:
-            print('CONTUNUE>>>')
-            continue
-        print(datetime.now().timestamp())
-        inst.get_last_candles()
+    # print(inst.conn.select_max(inst.name, 'timestamp'), datetime.now().timestamp(), 'delta', datetime.now().timestamp()-inst.conn.select_max(inst.name, 'timestamp'))
+    # while True:
+    #
+    #     last_time = datetime.now().timestamp() // 5 * 5
+    #     print('last_time', last_time)
+    #     next_time = last_time + 5
+    #     print('next_time', next_time)
+    #     sleep_time = next_time - datetime.now().timestamp()
+    #     print('sleep_time', sleep_time)
+    #     sleep(sleep_time)
+    #     print('check_time', datetime.now().timestamp())
+    #     if datetime.now().timestamp() < next_time:
+    #         print('CONTUNUE>>>')
+    #         continue
+    #     print(datetime.now().timestamp())
+    #     inst.get_last_candles()
 
