@@ -45,7 +45,7 @@ class RestAPI:
         for attempt in range(1, self.attempts + 1):
             try:
                 start_time = time()
-                response = self.session.get(url, timeout=self.timeout, headers=self.headers)
+                response = self.session.get(url, timeout=self.timeout, headers=self.headers, params=self.params)
                 self.duration = time() - start_time
                 response.raise_for_status()
                 # if

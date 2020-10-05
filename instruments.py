@@ -34,6 +34,7 @@ class Instrument(OandaAPI):
         max_timestamp = max_timestamp + 5 if max_timestamp else 1
         self.params = {'price': 'BA',
                        'granularity': 'S5',
+                       'count': '5000',
                        'from': max_timestamp}
         self.iter = 0
 
@@ -127,8 +128,8 @@ class Instrument(OandaAPI):
         # # return max timestamp
         while True:
             self.candle_cache = self.get(f"{self.url_candles}")['candles']
-            print('self.candle_cache', self.candle_cache)
-
+            # print('self.candle_cache', self.candle_cache)
+            self.verify_candles()
         #res = self.get_all_candles(max_timestamp + 5)
         # get start time
         #while True
@@ -149,21 +150,30 @@ class Instrument(OandaAPI):
             log.prn_log_info(f'Candles list empty. start time: {self.params["from"]} {self.from_ts(start_time)}')
             # self.__stop_iterations()
             return
+        print(self.candle_cache[-3])
+        print(self.from_ts(self.candle_cache[-3]['time']))
+        print(self.candle_cache[-2])
+        print(self.from_ts(self.candle_cache[-2]['time']))
+        print(self.candle_cache[-1])
+        print(self.from_ts(self.candle_cache[-1]['time']))
+        print(datetime.now())
 
         log.prn_log_info(f'Iteration # {self.iter}, {self.name}, received candles: {len(self.candle_cache)}. ')
+        self.params["from"] = int(float(self.candle_cache[-1]['time'])) + 5
 
-        if not self.candle_cache[-1]['complete']:
-            log.prn_log_info(f'Not complete candle found. Deleting candle from cache {self.candle_cache[-1]}')
-            print(datetime.now().timestamp())
-            print('LAST CANDLE NOT COMPLETE:', self.candle_cache[-1]['complete'],
-                  self.from_ts(self.candle_cache[-1]['time']))
-
-            del self.candle_cache[-1]
-
-            if self.candle_cache:
-                self.set_candles()
-
-            self.__stop_iterations()
+        #
+        # if not self.candle_cache[-1]['complete']:
+        #     log.prn_log_info(f'Not complete candle found. Deleting candle from cache {self.candle_cache[-1]}')
+        #     print(datetime.now().timestamp())
+        #     print('LAST CANDLE NOT COMPLETE:', self.candle_cache[-1]['complete'],
+        #           self.from_ts(self.candle_cache[-1]['time']))
+        #
+        #     del self.candle_cache[-1]
+        #
+        #     if self.candle_cache:
+        #         self.set_candles()
+        #
+        #     self.__stop_iterations()
 
 
     def set_candles(self):
