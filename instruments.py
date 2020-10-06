@@ -3,9 +3,10 @@ from security import oanda_auth_keys
 from datetime import datetime
 from logger import Logger
 from time import sleep
+import __main__ as main
 import asyncio
 
-log = Logger(__name__)
+log = Logger(__main__.)
 
 
 class Instrument(OandaAPI):

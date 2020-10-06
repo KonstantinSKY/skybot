@@ -9,12 +9,22 @@ Styles_end = '\033[0m'
 
 class Logger:
     def __init__(self, name):
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.INFO)
-        fh = logging.FileHandler("logs/main.log")
+        self.err_logger = logging.getLogger(name)
+        self.info_logger = logging.getLogger(name)
+
+        self.err_logger.setLevel(logging.ERROR)
+        self.info_logger.setLevel(logging.ERROR)
+
+        fh_err = logging.FileHandler(f"logs/err_{name}.log")
+        fh_info = logging.FileHandler(f"logs/info_{name}.log")
+
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
+        fh_err.setFormatter(formatter)
+        fh_info.setFormatter(formatter)
+
+        self.err_logger.addHandler(fh_err)
+        self.info_logger.addHandler(fh_info)
+
         self.allow_log = True
         self.allow_print = True
 
@@ -28,11 +38,11 @@ class Logger:
 
     def log_err(self, msg):
         if self.allow_log:
-            self.logger.error(msg)
+            self.err_logger.error(msg)
 
     def log_info(self, msg):
         if self.allow_log:
-            self.logger.info(msg)
+            self.info_logger.info(msg)
 
     def prn_log_err(self, msg):
         self.log_err(msg)
