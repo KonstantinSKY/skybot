@@ -76,50 +76,48 @@ class RestAPI:
         print(f'request {url} Start')
         session = aiohttp.ClientSession()
 
-        async with session.get(url, headers=self.headers, params=self.params) as resp:
+        async with session.get(url, headers=self.headers, params=self.params, timeout=self.timeout) as resp:
             print(f'request {url} midle')
             print(resp.status)
             res = await resp.text()
             print(f'request {url} finished')
 
         await session.close()
-        # await asyncio.sleep(0)
         return res
 
 
 if __name__ == "__main__":
-    rest = RestAPI()
-    print('rest.client', rest.session)
-    print('rest.client.headers', rest.session.headers)
-    print(time())
-    print('rest_time', rest.duration)
+    # rest = RestAPI()
+    # print('rest.client', rest.session)
+    # print('rest.client.headers', rest.session.headers)
+    # print(time())
+    # print('rest_time', rest.duration)
     auth = f'Bearer {auth_key}'
-    h = {'Content-Type': 'application/json',
-         'Authorization': auth,
-         }
-
-    print('rest_time', rest.duration)
-
-    rest2 = RestAPI(h)
-    print('rest2.client', rest2.session)
-    print('rest2.client.headers', rest2.session.headers)
-
-    print(rest2.get(
-        "https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
-
-    print('rest_time2', rest2.duration)
+    # h = {'Content-Type': 'application/json',
+    #      'Authorization': auth,
+    #      }
+    #
+    # print('rest_time', rest.duration)
+    #
+    # rest2 = RestAPI(h)
+    # print('rest2.client', rest2.session)
+    # print('rest2.client.headers', rest2.session.headers)
+    #
+    # print(rest2.get(
+    #     "https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
+    #
+    # print('rest_time2', rest2.duration)
     h = {'Content-Type': 'application/json',
          'Authorization': auth,
          'Accept-Datetime-Format': 'UNIX'
-         # 'Accept-Datetime-Format': 'RFC3339'
          }
-
-    rest3 = RestAPI(h)
-    print('rest2.client', rest3.session)
-    print('rest2.client.headers', rest3.session.headers)
-    print(rest3.get(
-        "https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
-    print('rest_time', rest3.duration)
+    #
+    # rest3 = RestAPI(h)
+    # print('rest2.client', rest3.session)
+    # print('rest2.client.headers', rest3.session.headers)
+    # print(rest3.get(
+    #     "https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles?count=6&price=M&granularity=S5"))
+    # print('rest_time', rest3.duration)
 
     print('get async')
     rest4 = RestAPI(h)
@@ -141,7 +139,7 @@ if __name__ == "__main__":
                         'granularity': 'S5'}
         res = await rest5.get_async(url)
         res = json.loads(res)['candles']
-        print(res)
+        print("ressss", res)
         print(len(res))
 
 

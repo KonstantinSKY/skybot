@@ -40,6 +40,8 @@ class OandaAPI(RestAPI):
                                'Authorization': 'Bearer ' + auth['key'],
                                'Accept-Datetime-Format': 'UNIX',
                                }
+
+        self.headers = self.session.headers
         self.url_accounts = f"{self.url_api}accounts"
         self.accounts_ids = [account['id'] for account in self.get_accounts()['accounts']]  # accounts ids list
         log.log_info('Oanda_API Init')
