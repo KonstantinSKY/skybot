@@ -34,7 +34,7 @@ class Instrument(OandaAPI):
         max_timestamp = max_timestamp + 5 if max_timestamp else 1
         self.params = {'price': 'BA',
                        'granularity': 'S5',
-                       'count': '5000',
+                       'count': 5000,
                        'from': max_timestamp}
         self.iter = 0
 
@@ -127,6 +127,7 @@ class Instrument(OandaAPI):
         # max_timestamp = max_timestamp if max_timestamp else 1
         # # return max timestamp
         while True:
+            self.waiter()
             self.candle_cache = self.get(f"{self.url_candles}")['candles']
             # print('self.candle_cache', self.candle_cache)
             self.verify_candles()
@@ -142,24 +143,57 @@ class Instrument(OandaAPI):
             # save result to DB
 
         # return res
+    def waiter(self):
+        print('Waiter')
+        print('Now', datetime.now().timestamp())
+        # print('Now - 5', datetime.now().timestamp() - 5)
+        print('Start', self.params['from'])
+        if (datetime.now().timestamp() - int(float(self.params['from']))) < 60:
+            check_time = datetime.now().timestamp()//5 * 5 + 5
+            print('NEED TO sleep', check_time - datetime.now().timestamp())
+            sleep(check_time - datetime.now().timestamp())
+
+        #if int(float(self.params['from'])) > check_time:
+        #     print('NEED TO sleep', (int(float(self.params['from'])) - 10) - check_time)
+        #     sleep((int(float(self.params['from'])) - check_time))
+
+
     def verify_candles(self):
         self.iter += 1
         log.prn_log_info(f'Iteration # {self.iter}, {self.name}, Start_time:, {self.params["from"]}, {self.from_ts(self.params["from"])}')
 
         if not self.candle_cache:
-            log.prn_log_info(f'Candles list empty. start time: {self.params["from"]} {self.from_ts(start_time)}')
-            # self.__stop_iterations()
+            log.prn_log_info(f'Candles list empty. start time: {self.params["from"]} {self.from_ts(self.params["from"])}, Now: {datetime.now().timestamp()}')
+            self.params["from"] = int(datetime.now().timestamp()) // 5 * 5 - 5
+            print('Next start tine:', self.params["from"])
             return
-        print(self.candle_cache[-3])
-        print(self.from_ts(self.candle_cache[-3]['time']))
-        print(self.candle_cache[-2])
-        print(self.from_ts(self.candle_cache[-2]['time']))
-        print(self.candle_cache[-1])
-        print(self.from_ts(self.candle_cache[-1]['time']))
-        print(datetime.now())
+        if len(self.candle_cache) > 1:
+            print('checking [-2]', self.candle_cache[-2])
+            if not self.candle_cache[-2]['complete']:
+                log.prn_log_info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                quit() 
+        print('checking', self.candle_cache[-1])
+        if not self.candle_cache[-1]['complete']:
+            print('delete', self.candle_cache[-1])
+            self.params["from"] = self.candle_cache[-1]['time']
+            del self.candle_cache[-1]
+            if not self.candle_cache:
+                log.prn_log_info(f'Candles list empty. start time: {self.params["from"]} {self.from_ts(self.params["from"])},  Now: {datetime.now().timestamp()}')
+            print('Next start time:', self.params["from"])
+            print('Candle got', self.candle_cache)
+            return
 
-        log.prn_log_info(f'Iteration # {self.iter}, {self.name}, received candles: {len(self.candle_cache)}. ')
+        # print(self.candle_cache[-3])
+        # print(self.from_ts(self.candle_cache[-3]['time']))
+        # print(self.candle_cache[-2])
+        # print(self.from_ts(self.candle_cache[-2]['time']))
+        # print(self.from_ts(self.candle_cache[-1]['time']))
+        # print('noedatetime.now())
+
+        log.prn_log_info(f'Iteration # {self.iter}, {self.name}, received candles: {len(self.candle_cache)}. Now: {datetime.now().timestamp()}')
         self.params["from"] = int(float(self.candle_cache[-1]['time'])) + 5
+        print('Next start time:', self.params["from"])
+        print('Candle got', self.candle_cache)
 
         #
         # if not self.candle_cache[-1]['complete']:
