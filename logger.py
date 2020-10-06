@@ -9,11 +9,11 @@ Styles_end = '\033[0m'
 
 class Logger:
     def __init__(self, name):
-        self.err_logger = logging.getLogger(name)
-        self.info_logger = logging.getLogger(name)
+        self.err_logger = logging.getLogger(f'err_{name}')
+        self.info_logger = logging.getLogger(f'info_{name}')
 
         self.err_logger.setLevel(logging.ERROR)
-        self.info_logger.setLevel(logging.ERROR)
+        self.info_logger.setLevel(logging.INFO)
 
         fh_err = logging.FileHandler(f"logs/err_{name}.log")
         fh_info = logging.FileHandler(f"logs/info_{name}.log")

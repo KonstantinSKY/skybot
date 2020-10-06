@@ -3,10 +3,9 @@ from security import oanda_auth_keys
 from datetime import datetime
 from logger import Logger
 from time import sleep
-import __main__ as main
 import asyncio
 
-log = Logger(__main__.)
+log = Logger(__name__)
 
 
 class Instrument(OandaAPI):
@@ -33,6 +32,7 @@ class Instrument(OandaAPI):
         self.candle_cache = {}
 
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
+        print('time for start', self.from_ts(max_timestamp))
         max_timestamp = max_timestamp + 5 if max_timestamp else 1
         self.params = {'price': 'BA',
                        'granularity': 'S5',
@@ -41,6 +41,7 @@ class Instrument(OandaAPI):
         self.iter = 0
 
         print('self.params', self.params)
+        print('time for start', self.from_ts(max_timestamp))
 
     def get_last_candles_by_count(self, count=5000):
         if count > 5000:
@@ -126,6 +127,7 @@ class Instrument(OandaAPI):
             f'Iteration # {self.iter}, {self.name}, received candles: {len(self.candle_cache)}. Now: {datetime.now().timestamp()}')
         self.params["from"] = int(float(self.candle_cache[-1]['time'])) + 5
         print('Next start time:', self.params["from"])
+        print('Candle COUNT', len(self.candle_cache))
         print('Candle got', self.candle_cache)
 
     def set_candles(self):
