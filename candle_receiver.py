@@ -40,14 +40,16 @@ class CandleReceiver(OandaAPI):
         # await self.__waiter__()
         print('now:', datetime.now().timestamp())
         print('int:', self.params['from'])
-        if datetime.now().timestamp() - int(float(self.params['from'])) < 10:
+        if datetime.now().timestamp() - int(float(self.params['from'])) < 5:
+            print("instrument", instr_obj.name)
             print('canceled ==========================================>')
             print('now:', datetime.now().timestamp())
             print('int:', self.params['from'])
             return
 
-        res = await self.get_async(instr_obj.url_candles)
-        instr_obj.candle_cache = json.loads(res)['candles']
+        res = await self.get_async(instr_obj.url_candles, timeout=2)
+        instr_obj.candle_cache = json.loads(res)['candles'] if res is not None else None
+
         print('instr_obj.url_candles', instr_obj.url_candles)
         print(len(instr_obj.candle_cache))
         # print(instr_obj.candle_cache[-1])
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     """for checking"""
     # cr = CandleReceiver(oanda_auth_keys[1])
     cr = CandleReceiver(oanda_auth_keys[1], ["EUR_USD", "USD_CAD", "CHF_HKD", "USD_SEK", "CHF_JPY",
-                                             "AUD_NZD", "EUR_GBP", "USD_THB", "EUR_NOK", "NZD_SGD"])
+                                             "AUD_NZD", "EUR_GBP", "USD_THB", "EUR_NOK", "AUD_CAD"])
     # print(cr.instruments)
     # print(cr.instr_objects)
 

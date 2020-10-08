@@ -73,17 +73,24 @@ class RestAPI:
                 log_rest.prn_log_err(f' Error occurred {err}, attempt:{attempt}')
 
     async def get_async(self, url, timeout=30):
+        self.timeout = timeout
         print(f'request {url} Start')
-        session = aiohttp.ClientSession()
 
-        async with session.get(url, headers=self.headers, params=self.params, timeout=self.timeout) as resp:
-            #print(f'request {url} midle')
-            # print('status:', resp.status)
-            res = await resp.text()
-            #print(f'request {url} finished')
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=self.headers, params=self.params, timeout=self.timeout) as resp:
+                    print('status:', resp.status)
+                    res = await resp.text()
 
-        await session.close()
-        return res
+                return res
+            except Exception as Err:
+                print('+' * 100)
+                print('ERROR ', Err)
+                # print('RES ', res)
+                print('status:', resp.status)
+                print('+' * 100)
+                sleep(10)
+
 
     def waiter(self):
         log.prn_log_info(f'Waiter: Next start time: {self.params["from"]})')
