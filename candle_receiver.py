@@ -11,6 +11,15 @@ from logger import Logger
 log = Logger(__name__)
 
 
+def main():
+    """main loop for getting candles"""
+    while True:
+        tasks = [cr.loop.create_task(cr.get_last_candles(instr_obj)) for instr_obj in cr.instr_objects]
+        start_time = datetime.now().timestamp()
+        cr.loop.run_until_complete(asyncio.wait(tasks))
+        print("time for :", datetime.now().timestamp() - start_time)
+
+
 class CandleReceiver(OandaAPI):
     """  Asynchronous API receiver for getting candle data from instruments"""
 
@@ -19,7 +28,7 @@ class CandleReceiver(OandaAPI):
         API receiver object constructor
         :param instruments: list of str -> list of instruments names
         :var self.instruments: list of str -> list of instruments names
-        :var self.instr_objects: list of objects -> list objects of instrument for receiving candle data
+        :var self.instr_objects: list of objects -> objects of instrument list for receiving candle data
         """
         super().__init__(auth)
         if instruments is None:
@@ -34,17 +43,12 @@ class CandleReceiver(OandaAPI):
         self.loop = asyncio.get_event_loop()
 
     async def get_last_candles(self, instr_obj):
-        """ Get all last candles"""
+        """ Async Getting  all last candles """
         print('instr_obj.url_candles', instr_obj.url_candles)
         self.params = instr_obj.params
-        # await self.__waiter__()
-        print('now:', datetime.now().timestamp())
-        print('int:', self.params['from'])
         if datetime.now().timestamp() - int(float(self.params['from'])) < 5:
-            print("instrument", instr_obj.name)
-            print('canceled ==========================================>')
-            print('now:', datetime.now().timestamp())
-            print('int:', self.params['from'])
+            log.prn_log_info(f'Canceled. Pause less then 5 sec. {instr_obj.name}, '
+                             f'from_time:, {self.params["from"]}, now: {datetime.now().timestamp()}')
             return
 
         res = await self.get_async(instr_obj.url_candles, timeout=2)
@@ -72,18 +76,6 @@ if __name__ == "__main__":
     # cr = CandleReceiver(oanda_auth_keys[1])
     cr = CandleReceiver(oanda_auth_keys[1], ["EUR_USD", "USD_CAD", "CHF_HKD", "USD_SEK", "CHF_JPY",
                                              "AUD_NZD", "EUR_GBP", "USD_THB", "EUR_NOK", "AUD_CAD"])
-    # print(cr.instruments)
-    # print(cr.instr_objects)
+    main()
 
 
-    while True:
-        tasks = [cr.loop.create_task(cr.get_last_candles(instr_obj)) for instr_obj in cr.instr_objects]
-        start_time = datetime.now().timestamp()
-        cr.loop.run_until_complete(asyncio.wait(tasks))
-        print("time for :", datetime.now().timestamp() - start_time)
-        # sleep(10)
-
-    #
-    # print('headers', cr.instr_objects[0].headers)
-    # print(cr.instr_objects[0].__dict__)
-    # main()
