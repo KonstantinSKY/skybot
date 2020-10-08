@@ -67,7 +67,9 @@ class CandleReceiver(OandaAPI):
 
 if __name__ == "__main__":
     """for checking"""
-    cr = CandleReceiver(oanda_auth_keys[1])
+    # cr = CandleReceiver(oanda_auth_keys[1])
+    cr = CandleReceiver(oanda_auth_keys[1], ["EUR_USD", "USD_CAD", "CHF_HKD", "USD_SEK", "CHF_JPY",
+                                             "AUD_NZD", "EUR_GBP", "USD_THB", "EUR_NOK", "NZD_SGD"])
     # print(cr.instruments)
     # print(cr.instr_objects)
 

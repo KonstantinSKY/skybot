@@ -1,17 +1,18 @@
 from databases import ConnectDB
-from sandbox.oanda import Account
-import security
+from account import Account
+from security import oanda_auth_keys
 
 # First program setup, create the tables in db if it not exist
 
 conn = ConnectDB("DB/oanda.sqlite")
-account = Account(security.auth_key, security.account1_id)
-account.get_instruments()
+print('oanda_auth_keys[1]', oanda_auth_keys[1])
+account = Account(oanda_auth_keys[1], oanda_auth_keys[1]['id'])
+instruments = account.get_instruments_names()
 print('Found instruments:')
-print(account.instruments)
-print(f'Count: {len(account.instruments)}')
+print(instruments)
+print(f'Count: {len(instruments)}')
 
-for instrument in account.instruments:
+for instrument in instruments:
     conn.create_table(instrument,
                       '''id INTEGER PRIMARY KEY,
                          timestamp INTEGER UNIQUE NOT NULL,
