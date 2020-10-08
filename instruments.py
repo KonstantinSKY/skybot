@@ -27,11 +27,10 @@ class Instrument(OandaAPI):
         super().__init__(auth)
         self.name = name
         self.granularity = granularity
-        self.url_candles = f'{self.url_api}/instruments/{name}/candles'
+        self.url_candles = f'{self.url_api}instruments/{name}/candles'
         self.candle_cache = {}
 
         max_timestamp = self.conn.select_max(self.name, 'timestamp')
-        print('time for start', self.from_ts(max_timestamp))
         max_timestamp = max_timestamp + 5 if max_timestamp else 1
         self.params = {'price': 'BA',
                        'granularity': 'S5',
@@ -122,7 +121,7 @@ class Instrument(OandaAPI):
         self.params["from"] = int(float(self.candle_cache[-1]['time'])) + 5
         print('Next start time:', self.params["from"])
         log.prn_log_info(f'Candle COUNT:  {len(self.candle_cache)}')
-        log.prn_log_info(f'from start time: {start_time} to  {int(self.candle_cache[-1]["time"])}')
+        log.prn_log_info(f'from start time: {start_time} to  {int(float(self.candle_cache[-1]["time"]))}')
         print('Candle got', self.candle_cache[-1])
 
     def set_candles(self):

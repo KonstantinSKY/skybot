@@ -3,51 +3,62 @@ from instruments import Instrument
 from security import oanda_auth_keys
 import asyncio
 from time import sleep
-from rest_api import RestAPI
+from oanda_api import OandaAPI
+import json
+from datetime import datetime
+from logger import Logger
+
+log = Logger(__name__)
 
 
-class CandleReceiver(RestAPI):
+class CandleReceiver(OandaAPI):
     """  Asynchronous API receiver for getting candle data from instruments"""
 
-    def __init__(self, instruments=None):
+    def __init__(self, auth, instruments=None):
         """
         API receiver object constructor
         :param instruments: list of str -> list of instruments names
         :var self.instruments: list of str -> list of instruments names
         :var self.instr_objects: list of objects -> list objects of instrument for receiving candle data
         """
-        super().__init__()
+        super().__init__(auth)
         if instruments is None:
-            self.instruments = Account(oanda_auth_keys[1], oanda_auth_keys[1]['id']).get_instruments_names()
+            self.instruments = Account(auth, auth['id']).get_instruments_names()
         else:
             self.instruments = instruments
         self.instr_objects = []
 
         for instrument in self.instruments:
-            self.instr_objects.append(Instrument(oanda_auth_keys[1], instrument, 'S5'))
+            self.instr_objects.append(Instrument(auth, instrument, 'S5'))
 
+        self.loop = asyncio.get_event_loop()
 
-        # self.loop = asyncio.get_event_loop()
-
-
-# async def get_last(obj):
-#     print('object', obj)
-#     await obj.get_all_candles()
-#
-
-# def main():
-#     loop = asyncio.get_event_loop()
-#     task_list = [loop.create_task(obj.get_last_candles()) for obj in cr.instr_objects]
-#     print(task_list)
-#     loop.run_until_complete(asyncio.wait(task_list))
-#     pass
+    async def get_last_candles(self, instr_obj):
+        """ Get all last candles"""
+        print('instr_obj.url_candles', instr_obj.url_candles)
+        self.params = instr_obj.params
+        res = await self.get_async(instr_obj.url_candles)
+        instr_obj.candle_cache = json.loads(res)['candles']
+        print('instr_obj.url_candles', instr_obj.url_candles)
+        print(len(instr_obj.candle_cache))
+        print(instr_obj.candle_cache[-1])
+        instr_obj.verify_candles()
+        if instr_obj.candle_cache:
+            instr_obj.set_candles()
+        #instr_obj.waiter()
 
 
 if __name__ == "__main__":
     """for checking"""
-    cr = CandleReceiver()
-    print(cr.instruments)
-    print(cr.instr_objects)
-    print('headers', cr.instr_objects[0].headers)
-    print(cr.instr_objects[0].__dict__)
+    cr = CandleReceiver(oanda_auth_keys[1])
+    #print(cr.instruments)
+   # print(cr.instr_objects)
+    tasks = [cr.loop.create_task(cr.get_last_candles(instr_obj)) for instr_obj in cr.instr_objects]
+    start_time = datetime.now().timestamp()
+    cr.loop.run_until_complete(asyncio.wait(tasks))
+    print("time for :", datetime.now().timestamp() - start_time)
+
+    #
+    # print('headers', cr.instr_objects[0].headers)
+    # print(cr.instr_objects[0].__dict__)
     # main()

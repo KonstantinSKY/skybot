@@ -6,7 +6,7 @@ log = Logger(__name__)
 
 
 class Account(OandaAPI):
-
+#TODO
     def __init__(self, auth, acc_id):
         super().__init__(auth)
         if acc_id not in self.accounts_ids:

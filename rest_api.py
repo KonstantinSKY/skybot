@@ -77,14 +77,22 @@ class RestAPI:
         session = aiohttp.ClientSession()
 
         async with session.get(url, headers=self.headers, params=self.params, timeout=self.timeout) as resp:
-            print(f'request {url} midle')
-            print(resp.status)
+            #print(f'request {url} midle')
+            # print('status:', resp.status)
             res = await resp.text()
-            print(f'request {url} finished')
+            #print(f'request {url} finished')
 
         await session.close()
         return res
 
+    def waiter(self):
+        log.prn_log_info(f'Waiter: Next start time: {self.params["from"]})')
+        log.prn_log_info(f'Now:  {datetime.now().timestamp()} {datetime.now()} ')
+
+        if (datetime.now().timestamp() - int(float(self.params['from']))) < 60:
+            check_time = datetime.now().timestamp() // 5 * 5 + 5
+            log.prn_log_info(f'NEED TO sleep: {check_time - datetime.now().timestamp()}')
+            sleep(check_time - datetime.now().timestamp())
 
 if __name__ == "__main__":
     # rest = RestAPI()
