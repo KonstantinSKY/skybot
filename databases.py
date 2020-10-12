@@ -1,26 +1,35 @@
 import sqlite3
 from decorators import try_decor
 from say import Say
+from abc import ABC, abstractmethod
+from logger import Logger
 
 
-class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of working with the database
-    count = 0
+log = Logger(__name__)
+# class ConnectDB(sqlite3.Connection):  # The class expands the possibilities of working with the database
+#     count = 0
+#
+#     def __init__(self, db_file):
+#         super().__init__(db_file)
+#         self.cur = self.cursor()
+#         ConnectDB.count += 1
+#
+#     """Create table in Data base with try-exception
+#     EXAMPLE IN
+#         create_table('table_name',
+#             '''
+#                 id INTEGER PRIMARY KEY,
+#                 name TEXT UNIQUE NOT NULL,
+#                 url TEXT UNIQUE NOT NULL,
+#                 description TEXT
+#             '''
+#     """
 
-    def __init__(self, db_file):
-        super().__init__(db_file)
-        self.cur = self.cursor()
-        ConnectDB.count += 1
 
-    """Create table in Data base with try-exception
-    EXAMPLE IN
-        create_table('table_name',
-            '''
-                id INTEGER PRIMARY KEY,
-                name TEXT UNIQUE NOT NULL,
-                url TEXT UNIQUE NOT NULL,
-                description TEXT
-            ''' 
-    """
+class DataBases(ABC):
+
+    def __init__(self):
+        self.cur = None
 
     @try_decor
     def create_table(self, table, fields):
