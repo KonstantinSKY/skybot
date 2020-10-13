@@ -1,7 +1,8 @@
 from rest_api import RestAPI
 import security
 from logger import Logger
-from databases import ConnectDB
+from sqlite_conn import SQLiteConn
+from psql_conn import PSQLConn
 from security import oanda_auth_keys
 from datetime import datetime
 import pytz
@@ -27,7 +28,8 @@ class OandaAPI(RestAPI):
 
     def __init__(self, auth):
         super().__init__()
-        self.conn = ConnectDB(OandaAPI.db_path)
+        self.conn = SQLiteConn(OandaAPI.db_path)
+        self.conn = PSQLConn('oanda')
 
         if TRADE_ENV[auth['env']]:
             self.url_api = TRADE_ENV[auth['env']]['api']

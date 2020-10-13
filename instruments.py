@@ -140,8 +140,8 @@ class Instrument(OandaAPI):
                 'volume': candle['volume']
             }
             )
-        self.conn.insert_many(self.name, candles)
-        self.conn.commit()
+        self.conn.insert_many(self.name, candles, 'timestamp')
+        self.conn.conn.commit()
         print('recorded ', self.name)
 
 
