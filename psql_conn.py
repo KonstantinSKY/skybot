@@ -4,10 +4,13 @@ from databases import DataBases
 from decorators import try_decor
 
 
-
 class PSQLConn(DataBases):
+    """ Class extended opportunity of psycopg2"""
 
     def __init__(self, db_name):
+        """
+        :param db_name: str -> Name of psql database
+        """
         super().__init__()
         self.conn = psycopg2.connect(
             host="localhost",
@@ -18,27 +21,27 @@ class PSQLConn(DataBases):
         self.extras = psycopg2.extras
 
     @try_decor
-    def insert_many(self, table, data_obj, conflict_field):
+    def insert_many(self, table, data_obj, conflict_field=''):
+        """
+        Insert many records to psql DB with ignore exist
+        :param table: str -> Table name
+        :param data_obj: obj -> object of Data (fields: values)
+        :param conflict_field: -> unique  field for check exist record for ignore
+        :return: None
+        """
+
         fields = ''
         fields_list = []
-        #binds = '?, ' * (len(data_obj[0])-1) + '?'
 
         for key in data_obj[0]:
             fields += f'{key}, '
             fields_list.append(key)
 
-
         fields = fields.rstrip(", ")
-        print(fields)
+
         values = [tuple(item[field] for field in fields_list) for item in data_obj]
-        print(values[0])
-        # query = f'''INSERT INTO {table} ({fields}) VALUES ({binds}) ON CONFLICT ({conflict_field}) DO NOTHING'''
         query = f'''INSERT INTO {table} ({fields}) VALUES %s ON CONFLICT ({conflict_field}) DO NOTHING'''
         self.extras.execute_values(self.cur, query, values, template=None,  page_size=5000)
-        print(query)
-        #print(values)
-        #self.cur.executemany(query, values)
-
 
 
 if __name__ == '__main__':

@@ -87,6 +87,7 @@ class DataBases(ABC):
                 ...
                 ]
         """
+
         fields = ''
         values = []
         binds = '?, ' * (len(data_obj[0]) - 1) + '?'
@@ -94,8 +95,13 @@ class DataBases(ABC):
             fields += f'{key}, '
             values.append(value)
         fields = fields.rstrip(", ")
+
         query = f'INSERT OR IGNORE INTO {table} ({fields}) VALUES ({binds})'
         return self.cur.execute(query, values).lastrowid
+
+
+
+
 
 
 if __name__ == "__main__":

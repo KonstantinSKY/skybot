@@ -1,4 +1,4 @@
-"""Initialization postgresql database"""
+"""Initialization postgresql database for oanda data"""
 from psql_conn import PSQLConn
 from account import Account
 from security import oanda_auth_keys

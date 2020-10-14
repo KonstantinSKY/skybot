@@ -21,6 +21,7 @@ class SQLiteConn(sqlite3.Connection, DataBases):  # The class expands the possib
 
         fields = fields.rstrip(", ")
         values = [tuple(item[field] for field in fields_list) for item in data_obj]
+
         query = f'INSERT OR IGNORE INTO {table} ({fields}) VALUES ({binds})'
         self.cur.executemany(query, values)
 
