@@ -102,8 +102,6 @@ class DataBases(ABC):
 
 
 
-
-
 if __name__ == "__main__":
     print("CHECK ZONE")
     db_path = 'DB/oanda.sqlite'
