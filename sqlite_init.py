@@ -35,6 +35,7 @@ for instrument in instruments:
                          ask_close REAL NOT NULL,
                          volume REAL NOT NULL
                       ''')
+    db.commit()
 db.close()
 del db
 

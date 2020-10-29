@@ -6,9 +6,9 @@ from security import oanda_auth_keys
 import sys
 
 
-class DB:
+class InitDB:
 
-    def __init__(self, type_db):
+    def __init__(self):
         self.db = None
         self.id_field = None
         account = Account(oanda_auth_keys[1], oanda_auth_keys[1]['id'])
@@ -17,21 +17,23 @@ class DB:
         print('Found instruments:')
         print(self.instruments)
         print(f'Count of instruments: {len(self.instruments)}')
-        print('Got argument', sys.argv[1])
-        self.psql_init()
 
     def psql_init(self):
         self.db = PSQLConn('oanda')
         self.id_field = 'id SERIAL PRIMARY KEY'
+        self.__create_table__()
+        self.db.conn.commit()
 
     def sqlite_init(self):
         self.db = SQLiteConn("DB/oanda.sqlite")
         self.id_field = 'id INTEGER PRIMARY KEY'
+        self.__create_table__()
+        self.db.commit()
 
-    def create_table(self):
+    def __create_table__(self):
         for instrument in self.instruments:
             self.db.create_table(instrument,
-                            f'''{self.id_field},
+                                 f'''{self.id_field},
                                  timestamp INTEGER UNIQUE NOT NULL,
                                  bid_high REAL NOT NULL,
                                  bid_low REAL NOT NULL,
@@ -43,12 +45,14 @@ class DB:
                                  ask_close REAL NOT NULL,
                                  volume REAL NOT NULL
                             ''')
-        self.db.conn.commit()
 
-if len(sys.argv) == 1 or sys.argv[1] == 'psql':
-else:
-    print('wrong argument!')
-    exit()
 
-# close the communication with the PostgreSQL
-db.cur.close()
+if __name__ == "__main__":
+    init = InitDB()
+    if len(sys.argv) == 1 or sys.argv[1] == 'psql':
+        init.psql_init()
+    elif sys.argv[1] == 'sqlite':
+        init.sqlite_init()
+    else:
+        print('wrong argument!')
+    del init
