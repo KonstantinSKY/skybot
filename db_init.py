@@ -1,10 +1,6 @@
 """Initialization postgresql database for oanda data"""
-from psql_conn import PSQLConn
-from sqlite_conn import SQLiteConn
-from account import Account
-from security import oanda_auth_keys
-import sys
 
+ 
 
 class InitDB:
     """  Initialization for different data base"""
@@ -12,6 +8,7 @@ class InitDB:
         self.db = None
         self.id_field = None
         account = Account(oanda_auth_keys[1], oanda_auth_keys[1]['id'])
+        print(account)
         self.instruments = account.get_instruments_names()
 
         print('Found instruments:')
@@ -59,4 +56,4 @@ if __name__ == "__main__":
         init.sqlite_init()
     else:
         print('wrong argument!')
-    del init
+ ql   del init

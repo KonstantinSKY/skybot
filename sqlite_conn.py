@@ -30,8 +30,8 @@ if __name__ == "__main__":
     print("CHECK ZONE")
     db_path = 'DB/oanda.sqlite'
     db = SQLiteConn(db_path)
-    print(db.version)
-    help(db.select_from_to_max)
+    print(type (db))
+    #help(db.select_from_to_max)
     records = db.select_from_to_max('EUR_USD', 'timestamp', 1601485325)
     print(records)
 

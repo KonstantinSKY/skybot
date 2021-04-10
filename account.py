@@ -41,7 +41,7 @@ if __name__ == "__main__":
     print(acc.get_summary())
     names = acc.get_instruments_names()
 
-    print(acc.get_instruments())
+
     print(names)
     # print(acc.get_instruments('EUR_USD'))
     # print(acc.get_latest_candles())
